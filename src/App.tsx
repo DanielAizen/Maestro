@@ -5,8 +5,15 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "./store";
 
+type PathHighlight = {
+  nodeIds: string[];
+  edgeIds: string[];
+} | null;
+
 export default function App() {
-  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<string[]>([]);
+  const [highlightedPath, setHighlightedPath] = useState<PathHighlight>(null);
+
   const theme = useSelector((state: RootState) => state.theme.theme);
   const isLight = theme === "light";
 
@@ -23,8 +30,14 @@ export default function App() {
     >
       <TopBarControls />
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        <Sidebar onHighlightNode={setHighlightedNodeId} />
-        <GraphCanvas highlightedNodeId={highlightedNodeId} />
+        <Sidebar
+          onHighlightNode={(ids) => setHighlightedNodeIds(ids)}
+          onHighlightPath={(path) => setHighlightedPath(path)}
+        />
+        <GraphCanvas
+          highlightedNodeIds={highlightedNodeIds}
+          pathHighlight={highlightedPath}
+        />
       </div>
     </div>
   );

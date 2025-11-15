@@ -18,10 +18,11 @@ import {
 import { useCallback, useMemo, useState } from "react";
 
 interface GraphCanvasProps {
-    highlightedNodeId: string | null;
+    highlightedNodeIds: string[];
+    pathHighlight: { nodeIds: string[]; edgeIds: string[] } | null;
 }
 
-export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
+export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -61,9 +62,19 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
         [dispatch]
     );
 
+    const highlightedSet = useMemo(
+        () => new Set(highlightedNodeIds),
+        [highlightedNodeIds]
+    );
+
+    console.log("highlightedNodeIds", highlightedNodeIds);
+
     const flowNodes = useMemo(
         () =>
             nodes.map((n) => {
+                const inPath = pathHighlight?.nodeIds.includes(n.id) ?? false;
+                const inSearchHighlight = highlightedSet.has(n.id);
+
                 const baseStyle = {
                     ...(n.style || {}),
                     backgroundColor: isDark ? "#ffffff" : "#2b2b2b",
@@ -76,30 +87,42 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
                     fontWeight: 500,
                 };
 
-                if (n.id !== highlightedNodeId) {
+                if (inSearchHighlight) {
                     return {
                         ...n,
-                        style: baseStyle,
+                        style: {
+                            ...baseStyle,
+                            borderColor: "#ffcc00",
+                            boxShadow: "0 0 0 4px rgba(255, 204, 0, 0.4)",
+                        },
+                    };
+                }
+
+                if (inPath) {
+                    return {
+                        ...n,
+                        style: {
+                            ...baseStyle,
+                            borderColor: "#00bcd4",
+                            boxShadow: "0 0 0 3px rgba(0, 188, 212, 0.35)",
+                        },
                     };
                 }
 
                 return {
                     ...n,
-                    style: {
-                        ...baseStyle,
-                        borderColor: "#ffcc00",
-                        boxShadow: "0 0 0 4px rgba(255, 204, 0, 0.4)",
-                    },
+                    style: baseStyle,
                 };
             }),
-        [nodes, highlightedNodeId, isDark]
+        [nodes, isDark, pathHighlight, highlightedSet]
     );
 
     const flowEdges: Edge[] = useMemo(
         () =>
             edges.map((e) => {
-                const data = e.data as Record<string, unknown> | null | undefined;
+                const inPath = pathHighlight?.edgeIds.includes(e.id) ?? false;
 
+                const data = e.data as Record<string, unknown> | null | undefined;
                 let storedLabel = "";
                 if (data && typeof data.label === "string") {
                     storedLabel = data.label;
@@ -107,13 +130,27 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
                     storedLabel = e.label;
                 }
 
+                const baseStyle = {
+                    ...(e.style || {}),
+                    strokeWidth: inPath ? 3 : 1.5,
+                    stroke: inPath ? "#d40000" : undefined,
+                };
+
                 if (e.id !== hoveredEdgeId) {
-                    return { ...e, label: undefined };
+                    return {
+                        ...e,
+                        label: undefined,
+                        style: baseStyle,
+                    };
                 }
 
-                return { ...e, label: storedLabel };
+                return {
+                    ...e,
+                    label: storedLabel,
+                    style: baseStyle,
+                };
             }),
-        [edges, hoveredEdgeId]
+        [edges, hoveredEdgeId, pathHighlight]
     );
 
     const onEdgeMouseEnter = useCallback(

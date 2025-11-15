@@ -22,6 +22,8 @@ function TopBarControlsInner() {
     const [nodeLabel, setNodeLabel] = useState("");
     const [edgeSource, setEdgeSource] = useState("");
     const [edgeTarget, setEdgeTarget] = useState("");
+    const [edgeWeight, setEdgeWeight] = useState("1"); // string for input
+
 
     const handleAddNode = () => {
         const trimmed = nodeLabel.trim();
@@ -34,10 +36,14 @@ function TopBarControlsInner() {
     const handleAddEdge = () => {
         if (!edgeSource || !edgeTarget || edgeSource === edgeTarget) return;
 
+        const parsedWeight = Number(edgeWeight);
+        const weight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 1;
+
         dispatch(
             addEdge({
                 sourceId: edgeSource,
                 targetId: edgeTarget,
+                weight
             })
         );
     };
@@ -45,7 +51,7 @@ function TopBarControlsInner() {
     return (
         <div
             style={{
-                padding: "20px 24px",
+                padding: "10px 12px",
                 borderBottom: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 display: "flex",
                 gap: "100px",
@@ -87,6 +93,15 @@ function TopBarControlsInner() {
                         </option>
                     ))}
                 </select>
+
+                <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={edgeWeight}
+                    onChange={(e) => setEdgeWeight(e.target.value)}
+                    style={{ width: "60px", padding: "2px 4px" }}
+                />
 
                 <button onClick={handleAddEdge}>Add edge</button>
             </div>
