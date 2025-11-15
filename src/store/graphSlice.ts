@@ -8,22 +8,31 @@ import {
     type NodeChange,
 } from "@xyflow/react";
 
-export interface GraphState {
+export interface GraphSnapshot {
     nodes: Node[];
     edges: Edge[];
 }
 
+export interface GraphState extends GraphSnapshot {
+    past: GraphSnapshot[];
+    future: GraphSnapshot[];
+}
+
 const initialState: GraphState = {
-    nodes: [
-        {
-            id: "n1",
-            position: { x: 0, y: 0 },
-            data: { label: "Node 1" },
-            type: "default",
-            style: { borderRadius: "60px", width: "60px", height: "60px" },
-        },
-    ],
+    nodes: [],
     edges: [],
+    past: [],
+    future: [],
+};
+
+const cloneSnapshot = (snap: GraphSnapshot): GraphSnapshot => ({
+    nodes: snap.nodes.map((n) => ({ ...n })),
+    edges: snap.edges.map((e) => ({ ...e })),
+});
+
+const pushHistory = (state: GraphState) => {
+    state.past.push(cloneSnapshot(state));
+    state.future = [];
 };
 
 export const graphSlice = createSlice({
@@ -32,7 +41,7 @@ export const graphSlice = createSlice({
     reducers: {
         addNode(state, action: PayloadAction<{ label: string }>) {
             const { label } = action.payload;
-
+            pushHistory(state);
             const newNode: Node = {
                 id: crypto.randomUUID(),
                 data: { label },
@@ -48,6 +57,7 @@ export const graphSlice = createSlice({
         },
 
         deleteNode(state, action: PayloadAction<{ nodeId: string }>) {
+            pushHistory(state);
             const { nodeId } = action.payload;
 
             state.nodes = state.nodes.filter((node) => node.id !== nodeId);
@@ -59,6 +69,7 @@ export const graphSlice = createSlice({
             state,
             action: PayloadAction<{ nodeId: string; label: string }>
         ) {
+            pushHistory(state);
             const { nodeId, label } = action.payload;
             const node = state.nodes.find((n) => n.id === nodeId);
             if (!node) return;
@@ -80,6 +91,7 @@ export const graphSlice = createSlice({
             if (alreadyExists) {
                 return;
             }
+            pushHistory(state);
 
             const getNodeLabel = (node: Node | undefined): string => {
                 if (!node) return "";
@@ -109,6 +121,8 @@ export const graphSlice = createSlice({
         },
 
         deleteEdge(state, action: PayloadAction<{ edgeId: string }>) {
+            pushHistory(state);
+
             const { edgeId } = action.payload;
             state.edges = state.edges.filter((edge) => edge.id !== edgeId);
         },
@@ -117,6 +131,7 @@ export const graphSlice = createSlice({
             state,
             action: PayloadAction<{ nodes: Node[]; edges: Edge[] }>
         ) {
+            pushHistory(state);
             state.nodes = action.payload.nodes;
             state.edges = action.payload.edges;
         },
@@ -127,6 +142,28 @@ export const graphSlice = createSlice({
 
         applyEdgesChange(state, action: PayloadAction<EdgeChange[]>) {
             state.edges = applyEdgeChanges(action.payload, state.edges);
+        },
+
+        undo(state) {
+            const previous = state.past.pop();
+            if (!previous) return;
+
+            const current = cloneSnapshot(state);
+            state.future.push(current);
+
+            state.nodes = previous.nodes.map((n) => ({ ...n }));
+            state.edges = previous.edges.map((e) => ({ ...e }));
+        },
+
+        redo(state) {
+            const next = state.future.pop();
+            if (!next) return;
+
+            const current = cloneSnapshot(state);
+            state.past.push(current);
+
+            state.nodes = next.nodes.map((n) => ({ ...n }));
+            state.edges = next.edges.map((e) => ({ ...e }));
         },
     },
 });
@@ -140,6 +177,8 @@ export const {
     setGraph,
     applyNodesChange,
     applyEdgesChange,
+    undo,
+    redo,
 } = graphSlice.actions;
 
 export default graphSlice.reducer;

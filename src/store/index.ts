@@ -1,5 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
-import graphReducer, { type GraphState } from "./graphSlice";
+import graphReducer, {
+    type GraphState,
+    type GraphSnapshot,
+} from "./graphSlice";
 
 const GRAPH_STORAGE_KEY = "graph-state-v1";
 
@@ -14,13 +17,20 @@ function loadGraphState(): RootPreloadedState | undefined {
         const raw = localStorage.getItem(GRAPH_STORAGE_KEY);
         if (!raw) return undefined;
 
-        const parsed = JSON.parse(raw) as GraphState;
+        const parsed = JSON.parse(raw) as GraphSnapshot;
 
         if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
             return undefined;
         }
 
-        return { graph: parsed };
+        const graph: GraphState = {
+            nodes: parsed.nodes,
+            edges: parsed.edges,
+            past: [],
+            future: [],
+        };
+
+        return { graph };
     } catch {
         return undefined;
     }
@@ -42,9 +52,13 @@ if (typeof window !== "undefined") {
         try {
             const state = store.getState();
             const graph = state.graph as GraphState;
-            localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(graph));
+            const snapshot: GraphSnapshot = {
+                nodes: graph.nodes,
+                edges: graph.edges,
+            };
+            localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(snapshot));
         } catch {
-            /* safely continue if an error occurs */
+            // safely continue if an error occurs
         }
     });
 }

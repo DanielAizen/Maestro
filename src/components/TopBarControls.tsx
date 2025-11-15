@@ -2,13 +2,19 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { addNode, addEdge } from "../store/graphSlice";
+import { addNode, addEdge, undo, redo } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
 
 export function TopBarControls() {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
+    const canUndo = useSelector(
+        (state: RootState) => state.graph.past.length > 0
+    );
+    const canRedo = useSelector(
+        (state: RootState) => state.graph.future.length > 0
+    );
 
     const [nodeLabel, setNodeLabel] = useState("");
     const [edgeSource, setEdgeSource] = useState("");
@@ -80,6 +86,14 @@ export function TopBarControls() {
                 </select>
 
                 <button onClick={handleAddEdge}>Add edge</button>
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                <button onClick={() => dispatch(undo())} disabled={!canUndo}>
+                    Undo
+                </button>
+                <button onClick={() => dispatch(redo())} disabled={!canRedo}>
+                    Redo
+                </button>
             </div>
         </div>
     );
