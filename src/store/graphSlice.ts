@@ -55,6 +55,17 @@ export const graphSlice = createSlice({
                 (edge) => edge.source !== nodeId && edge.target !== nodeId
             );
         },
+        renameNode(
+            state,
+            action: PayloadAction<{ nodeId: string; label: string }>
+        ) {
+            const { nodeId, label } = action.payload;
+            const node = state.nodes.find((n) => n.id === nodeId);
+            if (!node) return;
+
+            const data = (node.data as Record<string, unknown>) ?? {};
+            node.data = { ...data, label };
+        },
 
         addEdge(
             state,
@@ -107,6 +118,7 @@ export const {
     deleteNode,
     addEdge,
     deleteEdge,
+    renameNode,
     setGraph,
     applyNodesChange,
     applyEdgesChange,

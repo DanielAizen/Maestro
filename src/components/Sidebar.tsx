@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { deleteNode, deleteEdge } from "../store/graphSlice";
+import { deleteNode, deleteEdge, renameNode } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
 import { useState } from "react";
@@ -16,6 +16,9 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [searchError, setSearchError] = useState<string | null>(null);
+
+    const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+    const [editingLabel, setEditingLabel] = useState("")
 
     const getNodeLabelById = (id: string): string => {
         const node = nodes.find((n) => n.id === id);
@@ -50,6 +53,25 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
         setSearchTerm("");
         setSearchError(null);
         onHighlightNode(null);
+    };
+
+    const startEditing = (node: Node) => {
+        setEditingNodeId(node.id);
+        setEditingLabel(getNodeLabel(node));
+    };
+
+    const cancelEditing = () => {
+        setEditingNodeId(null);
+        setEditingLabel("");
+    };
+
+    const saveEditing = () => {
+        if (!editingNodeId) return;
+        const trimmed = editingLabel.trim();
+        if (!trimmed) return;
+
+        dispatch(renameNode({ nodeId: editingNodeId, label: trimmed }));
+        cancelEditing();
     };
 
     return (
@@ -114,25 +136,51 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                         rowGap: "6px"
                     }}
                 >
-                    {nodes.map((n: Node) => (
-                        <li
-                            key={n.id}
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginBottom: "4px",
-                            }}
-                        >
-                            <span>{getNodeLabel(n)}</span>
-                            <button
-                                style={{ marginLeft: "8px" }}
-                                onClick={() => dispatch(deleteNode({ nodeId: n.id }))}
+                    {nodes.map((n: Node) => {
+                        const isEdit = editingNodeId === n.id
+                        return (
+                            <li
+                                key={n.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginBottom: "4px",
+                                    gap: "4px",
+                                }}
                             >
-                                Delete
-                            </button>
-                        </li>
-                    ))}
+                                {isEdit ? (
+                                    <>
+                                        <input
+                                            value={editingLabel}
+                                            onChange={(e) => setEditingLabel(e.target.value)}
+                                            style={{
+                                                minWidth: "80px",
+                                                width: "auto",
+                                                padding: "2px 4px"
+                                            }}
+                                        />
+                                        <button onClick={saveEditing}>Save</button>
+                                        <button onClick={cancelEditing}>Cancel</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>{getNodeLabel(n)}</span>
+                                        <div style={{ display: "flex", gap: "4px" }}>
+                                            <button onClick={() => startEditing(n)}>Rename</button>
+                                            <button
+                                                onClick={() =>
+                                                    dispatch(deleteNode({ nodeId: n.id }))
+                                                }
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </li>
+                        )
+                    })}
                 </ul>
             </div>
 
