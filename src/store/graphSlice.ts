@@ -85,9 +85,13 @@ export const graphSlice = createSlice({
 
         addEdge(
             state,
-            action: PayloadAction<{ sourceId: string; targetId: string }>
+            action: PayloadAction<{
+                sourceId: string;
+                targetId: string;
+                weight?: number;
+            }>
         ) {
-            const { sourceId, targetId } = action.payload;
+            const { sourceId, targetId, weight = 1 } = action.payload;
 
             // don't add duplicate edges
             const alreadyExists = state.edges.some(
@@ -119,7 +123,10 @@ export const graphSlice = createSlice({
                 id: crypto.randomUUID(),
                 source: sourceId,
                 target: targetId,
-                label: edgeLabel,
+                data: {
+                    weight,
+                    label: edgeLabel,
+                },
             };
 
             state.edges.push(newEdge);
