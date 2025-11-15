@@ -165,7 +165,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                                     </>
                                 ) : (
                                     <>
-                                        <span>{getNodeLabel(n)}</span>
+                                        <span style={{ fontWeight: "bold" }}>{getNodeLabel(n)}</span>
                                         <div style={{ display: "flex", gap: "4px" }}>
                                             <button onClick={() => startEditing(n)}>Rename</button>
                                             <button

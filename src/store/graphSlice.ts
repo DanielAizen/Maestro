@@ -73,7 +73,7 @@ export const graphSlice = createSlice({
         ) {
             const { sourceId, targetId } = action.payload;
 
-            // Do not add duplicate edges
+            // don't add duplicate edges
             const alreadyExists = state.edges.some(
                 (e) => e.source === sourceId && e.target === targetId
             );
@@ -81,10 +81,28 @@ export const graphSlice = createSlice({
                 return;
             }
 
+            const getNodeLabel = (node: Node | undefined): string => {
+                if (!node) return "";
+                const data = node.data as
+                    | Record<string, unknown>
+                    | null
+                    | undefined;
+                const label = data?.label;
+                return typeof label === "string" ? label : node.id;
+            };
+
+            const sourceNode = state.nodes.find((n) => n.id === sourceId);
+            const targetNode = state.nodes.find((n) => n.id === targetId);
+
+            const edgeLabel = `${getNodeLabel(sourceNode)} → ${getNodeLabel(
+                targetNode
+            )}`;
+
             const newEdge: Edge = {
                 id: crypto.randomUUID(),
                 source: sourceId,
                 target: targetId,
+                label: edgeLabel,
             };
 
             state.edges.push(newEdge);
