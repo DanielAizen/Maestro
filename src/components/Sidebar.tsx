@@ -3,13 +3,13 @@ import type { RootState } from "../store";
 import { deleteNode, deleteEdge, renameNode } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 interface SidebarProps {
     onHighlightNode: (nodeId: string | null) => void;
 }
 
-export function Sidebar({ onHighlightNode }: SidebarProps) {
+function SidebarInner({ onHighlightNode }: SidebarProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -238,3 +238,5 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
         </div>
     );
 }
+
+export const Sidebar = memo(SidebarInner)
