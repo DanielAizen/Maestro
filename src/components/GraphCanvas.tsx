@@ -67,8 +67,6 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
         [highlightedNodeIds]
     );
 
-    console.log("highlightedNodeIds", highlightedNodeIds);
-
     const flowNodes = useMemo(
         () =>
             nodes.map((n) => {
