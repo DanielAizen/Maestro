@@ -1,0 +1,66 @@
+{
+    "nodes": [
+        {
+            "id": "A",
+            "label": "Start",
+            "x": 100,
+            "y": 100
+        },
+        {
+            "id": "B",
+            "label": "B",
+            "x": 300,
+            "y": 150
+        },
+        {
+            "id": "C",
+            "label": "C",
+            "x": 500,
+            "y": 100
+        },
+        {
+            "id": "D",
+            "label": "D",
+            "x": 300,
+            "y": 300
+        },
+        {
+            "id": "E",
+            "label": "Goal",
+            "x": 500,
+            "y": 300
+        }
+    ],
+    "edges": [
+        {
+            "id": "AB",
+            "source": "A",
+            "target": "B",
+            "weight": 2
+        },
+        {
+            "id": "AC",
+            "source": "A",
+            "target": "C",
+            "weight": 5
+        },
+        {
+            "id": "BD",
+            "source": "B",
+            "target": "D",
+            "weight": 4
+        },
+        {
+            "id": "CD",
+            "source": "C",
+            "target": "D",
+            "weight": 1
+        },
+        {
+            "id": "DE",
+            "source": "D",
+            "target": "E",
+            "weight": 3
+        }
+    ]
+}
