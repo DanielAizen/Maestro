@@ -14,6 +14,8 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
 
+    const theme = useSelector((state: RootState) => state.theme.theme)
+
     const [searchTerm, setSearchTerm] = useState("");
     const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -78,7 +80,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
         <div
             style={{
                 width: "260px",
-                borderRight: "1px solid #ffffff22",
+                borderRight: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 padding: "12px",
                 fontSize: "14px",
                 display: "flex",
@@ -87,7 +89,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
             }}
         >
             <div>
-                <h3 style={{ margin: "0 0 8px", color: "white" }}>Nodes</h3>
+                <h3 style={{ margin: "0 0 8px", color: `${theme === 'dark' ? "white" : "black"}` }}>Nodes</h3>
 
                 <div
                     style={{
@@ -106,8 +108,16 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                         style={{ flex: 1, padding: "2px 6px" }}
                     />
                     <div style={{ display: "flex", justifyContent: "space-around", paddingBottom: "10px" }}>
-                        <button onClick={handleSearch}>Search</button>
-                        <button onClick={handleClearSearch}>Clear</button>
+                        <button
+                            style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                            onClick={handleSearch}>
+                            Search
+                        </button>
+                        <button
+                            style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                            onClick={handleClearSearch}>
+                            Clear
+                        </button>
 
                     </div>
 
@@ -115,7 +125,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                 {searchError && (
                     <div
                         style={{
-                            color: "#ffaaaa",
+                            color: "#ff0000",
                             fontSize: "12px",
                             marginBottom: "4px",
                         }}
@@ -125,14 +135,14 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                 )}
 
                 {nodes.length === 0 && (
-                    <div style={{ opacity: 0.7, color: "white" }}>No nodes yet</div>
+                    <div style={{ opacity: 0.7, color: `${theme === 'dark' ? "white" : "black"}` }}>No nodes yet</div>
                 )}
                 <ul
                     style={{
                         listStyle: "none",
                         padding: 0,
                         margin: 0,
-                        color: "white",
+                        color: `${theme === 'dark' ? "white" : "black"}`,
                         rowGap: "6px"
                     }}
                 >
@@ -167,8 +177,13 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                                     <>
                                         <span style={{ fontWeight: "bold" }}>{getNodeLabel(n)}</span>
                                         <div style={{ display: "flex", gap: "4px" }}>
-                                            <button onClick={() => startEditing(n)}>Rename</button>
                                             <button
+                                                style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                                                onClick={() => startEditing(n)}>
+                                                Rename
+                                            </button>
+                                            <button
+                                                style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
                                                 onClick={() =>
                                                     dispatch(deleteNode({ nodeId: n.id }))
                                                 }
@@ -185,16 +200,16 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
             </div>
 
             <div>
-                <h3 style={{ margin: "12px 0 8px", color: "white" }}>Edges</h3>
+                <h3 style={{ margin: "12px 0 8px", color: `${theme === 'dark' ? "white" : "black"}` }}>Edges</h3>
                 {edges.length === 0 && (
-                    <div style={{ opacity: 0.7, color: "white" }}>No edges yet</div>
+                    <div style={{ opacity: 0.7, color: `${theme === 'dark' ? "white" : "black"}` }}>No edges yet</div>
                 )}
                 <ul
                     style={{
                         listStyle: "none",
                         padding: 0,
                         margin: 0,
-                        color: "white",
+                        color: `${theme === 'dark' ? "white" : "black"}`,
                     }}
                 >
                     {edges.map((e) => (
@@ -211,7 +226,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                                 {getNodeLabelById(e.source)} → {getNodeLabelById(e.target)}
                             </span>
                             <button
-                                style={{ marginLeft: "8px" }}
+                                style={{ marginLeft: "8px", backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
                                 onClick={() => dispatch(deleteEdge({ edgeId: e.id }))}
                             >
                                 Delete

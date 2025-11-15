@@ -3,6 +3,7 @@ import graphReducer, {
     type GraphState,
     type GraphSnapshot,
 } from "./graphSlice";
+import themeReducer, { THEME_STORAGE_KEY } from "./themeSlice";
 
 const GRAPH_STORAGE_KEY = "graph-state-v1";
 
@@ -39,6 +40,7 @@ function loadGraphState(): RootPreloadedState | undefined {
 export const store = configureStore({
     reducer: {
         graph: graphReducer,
+        theme: themeReducer,
     },
     preloadedState: loadGraphState(),
 });
@@ -57,6 +59,8 @@ if (typeof window !== "undefined") {
                 edges: graph.edges,
             };
             localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(snapshot));
+            const theme = state.theme.theme;
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
         } catch {
             // safely continue if an error occurs
         }

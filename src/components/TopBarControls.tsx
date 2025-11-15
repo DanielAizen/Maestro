@@ -5,6 +5,7 @@ import type { RootState } from "../store";
 import { addNode, addEdge, undo, redo } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
+import { toggleTheme } from "../store/themeSlice";
 
 export function TopBarControls() {
     const dispatch = useDispatch();
@@ -15,6 +16,8 @@ export function TopBarControls() {
     const canRedo = useSelector(
         (state: RootState) => state.graph.future.length > 0
     );
+
+    const theme = useSelector((state: RootState) => state.theme.theme)
 
     const [nodeLabel, setNodeLabel] = useState("");
     const [edgeSource, setEdgeSource] = useState("");
@@ -43,7 +46,7 @@ export function TopBarControls() {
         <div
             style={{
                 padding: "20px 24px",
-                borderBottom: "1px solid #ffffff",
+                borderBottom: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 display: "flex",
                 gap: "100px",
                 alignItems: "center",
@@ -93,6 +96,9 @@ export function TopBarControls() {
                 </button>
                 <button onClick={() => dispatch(redo())} disabled={!canRedo}>
                     Redo
+                </button>
+                <button onClick={() => dispatch(toggleTheme())}>
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
                 </button>
             </div>
         </div>

@@ -50,7 +50,12 @@ export const graphSlice = createSlice({
                     y: Math.random() * 200,
                 },
                 type: "default",
-                style: { borderRadius: "60px", width: "60px", height: "60px" },
+                style: {
+                    borderRadius: "60px",
+                    width: "60px",
+                    height: "60px",
+                    textAlign: "center",
+                },
             };
 
             state.nodes.push(newNode);
