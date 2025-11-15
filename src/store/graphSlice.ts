@@ -8,7 +8,7 @@ import {
     type NodeChange,
 } from "@xyflow/react";
 
-interface GraphState {
+export interface GraphState {
     nodes: Node[];
     edges: Edge[];
 }
