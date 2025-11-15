@@ -1,5 +1,5 @@
 // src/components/TopBarControls.tsx
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
 import { addNode, addEdge, undo, redo } from "../store/graphSlice";
@@ -7,7 +7,7 @@ import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
 import { toggleTheme } from "../store/themeSlice";
 
-export function TopBarControls() {
+function TopBarControlsInner() {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const canUndo = useSelector(
@@ -104,3 +104,5 @@ export function TopBarControls() {
         </div>
     );
 }
+
+export const TopBarControls = memo(TopBarControlsInner)
