@@ -11,9 +11,8 @@ type PathHighlight = {
 } | null;
 
 export default function App() {
-  const[highlightedNodeIds, setHighlightedNodeIds] = useState<string[]>([]);
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<string[]>([]);
   const [highlightedPath, setHighlightedPath] = useState<PathHighlight>(null);
-
 
   const theme = useSelector((state: RootState) => state.theme.theme);
   const isLight = theme === "light";
@@ -32,8 +31,8 @@ export default function App() {
       <TopBarControls />
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         <Sidebar
-          onHighlightNode={setHighlightedNodeIds}
-          onHighlightPath={setHighlightedPath}
+          onHighlightNode={(ids) => setHighlightedNodeIds(ids)}
+          onHighlightPath={(path) => setHighlightedPath(path)}
         />
         <GraphCanvas
           highlightedNodeIds={highlightedNodeIds}

@@ -469,15 +469,6 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                         ))}
                     </select>
 
-                    {selectedExampleId && (
-                        <div style={{ fontSize: "11px", color: "#fc08088e" }}>
-                            {
-                                exampleGraphs.find((g) => g.id === selectedExampleId)
-                                    ?.description
-                            }
-                        </div>
-                    )}
-
                     <button
                         onClick={loadExampleGraph}
                         disabled={!selectedExampleId}

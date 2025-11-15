@@ -62,9 +62,18 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
         [dispatch]
     );
 
+    const highlightedSet = useMemo(
+        () => new Set(highlightedNodeIds),
+        [highlightedNodeIds]
+    );
+
+    console.log("highlightedNodeIds", highlightedNodeIds);
+
     const flowNodes = useMemo(
         () =>
             nodes.map((n) => {
+                const inPath = pathHighlight?.nodeIds.includes(n.id) ?? false;
+                const inSearchHighlight = highlightedSet.has(n.id);
 
                 const baseStyle = {
                     ...(n.style || {}),
@@ -77,9 +86,6 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
                     fontSize: "12px",
                     fontWeight: 500,
                 };
-                const inPath = pathHighlight?.nodeIds.includes(n.id) ?? false;
-                const inSearchHighlight = highlightedNodeIds.includes(n.id);
-
 
                 if (inSearchHighlight) {
                     return {
@@ -105,14 +111,10 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
 
                 return {
                     ...n,
-                    style: {
-                        ...baseStyle,
-                        borderColor: "#ffcc00",
-                        boxShadow: "0 0 0 4px rgba(255, 204, 0, 0.4)",
-                    },
+                    style: baseStyle,
                 };
             }),
-        [nodes, highlightedNodeIds, isDark, pathHighlight]
+        [nodes, isDark, pathHighlight, highlightedSet]
     );
 
     const flowEdges: Edge[] = useMemo(

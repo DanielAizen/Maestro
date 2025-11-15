@@ -51,7 +51,7 @@ function TopBarControlsInner() {
     return (
         <div
             style={{
-                padding: "20px 24px",
+                padding: "10px 12px",
                 borderBottom: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 display: "flex",
                 gap: "100px",
