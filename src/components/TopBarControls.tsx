@@ -2,13 +2,22 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { addNode, addEdge } from "../store/graphSlice";
+import { addNode, addEdge, undo, redo } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
+import { toggleTheme } from "../store/themeSlice";
 
 export function TopBarControls() {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
+    const canUndo = useSelector(
+        (state: RootState) => state.graph.past.length > 0
+    );
+    const canRedo = useSelector(
+        (state: RootState) => state.graph.future.length > 0
+    );
+
+    const theme = useSelector((state: RootState) => state.theme.theme)
 
     const [nodeLabel, setNodeLabel] = useState("");
     const [edgeSource, setEdgeSource] = useState("");
@@ -37,7 +46,7 @@ export function TopBarControls() {
         <div
             style={{
                 padding: "20px 24px",
-                borderBottom: "1px solid #ffffff",
+                borderBottom: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 display: "flex",
                 gap: "100px",
                 alignItems: "center",
@@ -80,6 +89,17 @@ export function TopBarControls() {
                 </select>
 
                 <button onClick={handleAddEdge}>Add edge</button>
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+                <button onClick={() => dispatch(undo())} disabled={!canUndo}>
+                    Undo
+                </button>
+                <button onClick={() => dispatch(redo())} disabled={!canRedo}>
+                    Redo
+                </button>
+                <button onClick={() => dispatch(toggleTheme())}>
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
             </div>
         </div>
     );
