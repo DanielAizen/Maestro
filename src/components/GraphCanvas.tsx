@@ -18,11 +18,11 @@ import {
 import { useCallback, useMemo, useState } from "react";
 
 interface GraphCanvasProps {
-    highlightedNodeId: string | null;
+    highlightedNodeIds: string[];
     pathHighlight: { nodeIds: string[]; edgeIds: string[] } | null;
 }
 
-export function GraphCanvas({ highlightedNodeId, pathHighlight }: GraphCanvasProps) {
+export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -78,11 +78,17 @@ export function GraphCanvas({ highlightedNodeId, pathHighlight }: GraphCanvasPro
                     fontWeight: 500,
                 };
                 const inPath = pathHighlight?.nodeIds.includes(n.id) ?? false;
+                const inSearchHighlight = highlightedNodeIds.includes(n.id);
 
-                if (n.id !== highlightedNodeId) {
+
+                if (inSearchHighlight) {
                     return {
                         ...n,
-                        style: baseStyle,
+                        style: {
+                            ...baseStyle,
+                            borderColor: "#ffcc00",
+                            boxShadow: "0 0 0 4px rgba(255, 204, 0, 0.4)",
+                        },
                     };
                 }
 
@@ -106,7 +112,7 @@ export function GraphCanvas({ highlightedNodeId, pathHighlight }: GraphCanvasPro
                     },
                 };
             }),
-        [nodes, highlightedNodeId, isDark, pathHighlight]
+        [nodes, highlightedNodeIds, isDark, pathHighlight]
     );
 
     const flowEdges: Edge[] = useMemo(

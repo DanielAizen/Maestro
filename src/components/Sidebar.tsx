@@ -1,17 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
 import { deleteNode, deleteEdge, renameNode } from "../store/graphSlice";
-import type { Node } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { bfsShortestPath, buildAdjacencyList, dijkstraShortestPath } from "../utils/graphAlgorithms";
-import exampleGraph from "../examples/exampleGraph.json";
-import type { ExampleGraph } from "../examples/types";
+// import exampleGraph from "../examples/exampleGraph.json";
+// import type { ExampleGraph } from "../examples/types";
+import { exampleGraphs } from "../examples/graphs";
 import { setGraph } from "../store/graphSlice";
 
 
 interface SidebarProps {
-    onHighlightNode: (nodeId: string | null) => void;
+    onHighlightNode: (nodeId: string[]) => void;
     onHighlightPath: (path: { nodeIds: string[]; edgeIds: string[] } | null) => void;
 }
 
@@ -39,6 +40,7 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
         edges: number;
     } | null>(null);
 
+    const [selectedExampleId, setSelectedExampleId] = useState<string>("");
 
     const getNodeLabelById = (id: string): string => {
         const node = nodes.find((n) => n.id === id);
@@ -49,30 +51,32 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
         const trimmed = searchTerm.trim();
 
         if (!trimmed) {
-            onHighlightNode(null);
+            onHighlightNode([]);
             setSearchError(null);
             return;
         }
 
         const lower = trimmed.toLowerCase();
 
-        const match = nodes.find((n) =>
+        const matches = nodes.filter((n) =>
             getNodeLabel(n as Node).toLowerCase().includes(lower)
         );
 
-        if (match) {
-            onHighlightNode(match.id);
+        if (matches.length > 0) {
+            onHighlightNode(matches.map((n) => n.id));
             setSearchError(null);
         } else {
-            onHighlightNode(null);
+            onHighlightNode([]);
             setSearchError("Node not found");
         }
     };
 
+
+
     const handleClearSearch = () => {
         setSearchTerm("");
         setSearchError(null);
-        onHighlightNode(null);
+        onHighlightNode([]);
     };
 
     const startEditing = (node: Node) => {
@@ -94,6 +98,49 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
         cancelEditing();
     };
 
+    const adjacency = useMemo(
+        () => buildAdjacencyList(nodes as Node[], edges),
+        [nodes, edges]
+    );
+
+    const loadExampleGraph = () => {
+        const ex = exampleGraphs.find((g) => g.id === selectedExampleId);
+        if (!ex) return;
+
+        const nodes: Node[] = ex.nodes.map((n) => ({
+            id: n.id,
+            data: { label: n.label },
+            position: { x: n.x, y: n.y },
+            type: "default",
+            style: {
+                borderRadius: "60px",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 500
+            }
+        }));
+
+        const edges: Edge[] = ex.edges.map((e) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            label: `${e.source} → ${e.target}`,
+            data: {
+                label: `${e.source} → ${e.target}`,
+                weight: e.weight
+            }
+        }));
+
+        onHighlightNode([]);
+        onHighlightPath(null);
+
+        dispatch(setGraph({ nodes, edges }));
+    };
+
+
     const runPathfinding = () => {
         setPathError(null);
 
@@ -103,13 +150,11 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
             return;
         }
 
-        const adj = buildAdjacencyList(nodes as Node[], edges);
-
         const t0 = performance.now();
         const result =
             algo === "bfs"
-                ? bfsShortestPath(adj, startNode, endNode)
-                : dijkstraShortestPath(adj, startNode, endNode);
+                ? bfsShortestPath(adjacency, startNode, endNode)
+                : dijkstraShortestPath(adjacency, startNode, endNode);
         const t1 = performance.now();
 
         setLastMetrics({
@@ -131,6 +176,7 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
         });
     };
 
+
     const clearPath = () => {
         onHighlightPath(null);
         setPathError(null);
@@ -141,12 +187,14 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
         <div
             style={{
                 width: "260px",
+                height: "100%",
                 borderRight: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
                 padding: "12px",
                 fontSize: "14px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "16px",
+                boxSizing: "border-box",
             }}
         >
             <div>
@@ -198,66 +246,73 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                 {nodes.length === 0 && (
                     <div style={{ opacity: 0.7, color: `${theme === 'dark' ? "white" : "black"}` }}>No nodes yet</div>
                 )}
-                <ul
+                <div
                     style={{
-                        listStyle: "none",
-                        padding: 0,
-                        margin: 0,
-                        color: `${theme === 'dark' ? "white" : "black"}`,
-                        rowGap: "6px"
-                    }}
-                >
-                    {nodes.map((n: Node) => {
-                        const isEdit = editingNodeId === n.id
-                        return (
-                            <li
-                                key={n.id}
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    marginBottom: "4px",
-                                    gap: "4px",
-                                }}
-                            >
-                                {isEdit ? (
-                                    <>
-                                        <input
-                                            value={editingLabel}
-                                            onChange={(e) => setEditingLabel(e.target.value)}
-                                            style={{
-                                                minWidth: "80px",
-                                                width: "auto",
-                                                padding: "2px 4px"
-                                            }}
-                                        />
-                                        <button onClick={saveEditing}>Save</button>
-                                        <button onClick={cancelEditing}>Cancel</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span style={{ fontWeight: "bold" }}>{getNodeLabel(n)}</span>
-                                        <div style={{ display: "flex", gap: "4px" }}>
-                                            <button
-                                                style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
-                                                onClick={() => startEditing(n)}>
-                                                Rename
-                                            </button>
-                                            <button
-                                                style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
-                                                onClick={() =>
-                                                    dispatch(deleteNode({ nodeId: n.id }))
-                                                }
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </li>
-                        )
-                    })}
-                </ul>
+                        maxHeight: "220px",
+                        overflowY: "auto",
+                        paddingRight: "4px",
+                    }}>
+                    <ul
+                        style={{
+                            listStyle: "none",
+                            padding: 0,
+                            margin: 0,
+                            color: `${theme === 'dark' ? "white" : "black"}`,
+                            rowGap: "6px"
+                        }}
+                    >
+                        {nodes.map((n: Node) => {
+                            const isEdit = editingNodeId === n.id
+                            return (
+                                <li
+                                    key={n.id}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: "4px",
+                                        gap: "4px",
+                                    }}
+                                >
+                                    {isEdit ? (
+                                        <>
+                                            <input
+                                                value={editingLabel}
+                                                onChange={(e) => setEditingLabel(e.target.value)}
+                                                style={{
+                                                    minWidth: "80px",
+                                                    width: "auto",
+                                                    padding: "2px 4px"
+                                                }}
+                                            />
+                                            <button onClick={saveEditing}>Save</button>
+                                            <button onClick={cancelEditing}>Cancel</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span style={{ fontWeight: "bold" }}>{getNodeLabel(n)}</span>
+                                            <div style={{ display: "flex", gap: "4px" }}>
+                                                <button
+                                                    style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                                                    onClick={() => startEditing(n)}>
+                                                    Rename
+                                                </button>
+                                                <button
+                                                    style={{ backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                                                    onClick={() =>
+                                                        dispatch(deleteNode({ nodeId: n.id }))
+                                                    }
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </div>
             </div>
 
             <div>
@@ -265,36 +320,45 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                 {edges.length === 0 && (
                     <div style={{ opacity: 0.7, color: `${theme === 'dark' ? "white" : "black"}` }}>No edges yet</div>
                 )}
-                <ul
+                <div
                     style={{
-                        listStyle: "none",
-                        padding: 0,
-                        margin: 0,
-                        color: `${theme === 'dark' ? "white" : "black"}`,
-                    }}
-                >
-                    {edges.map((e) => (
-                        <li
-                            key={e.id}
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginBottom: "4px",
-                            }}
-                        >
-                            <span>
-                                {getNodeLabelById(e.source)} → {getNodeLabelById(e.target)}
-                            </span>
-                            <button
-                                style={{ marginLeft: "8px", backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
-                                onClick={() => dispatch(deleteEdge({ edgeId: e.id }))}
+                        maxHeight: "180px",
+                        overflowY: "auto",
+                        paddingRight: "4px",
+                    }}>
+
+                    <ul
+                        style={{
+                            listStyle: "none",
+                            padding: 0,
+                            margin: 0,
+                            color: `${theme === 'dark' ? "white" : "black"}`,
+                        }}
+                    >
+                        {edges.map((e) => (
+                            <li
+                                key={e.id}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginBottom: "4px",
+                                }}
                             >
-                                Delete
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                <span>
+                                    {getNodeLabelById(e.source)} → {getNodeLabelById(e.target)}
+                                </span>
+                                <button
+                                    style={{ marginLeft: "8px", backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                                    onClick={() => dispatch(deleteEdge({ edgeId: e.id }))}
+                                >
+                                    Delete
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
             </div>
             <div style={{ marginTop: "16px", paddingTop: "8px", borderTop: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}` }}>
                 <h3 style={{ margin: "0 0 8px", color: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>Pathfinding</h3>
@@ -381,7 +445,52 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                         </div>
                     )}
                 </div>
-                <button
+                <div
+                    style={{
+                        marginTop: "16px",
+                        paddingTop: "8px",
+                        borderTop: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px"
+                    }}
+                >
+                    <h3 style={{ margin: "0 0 6px", color: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>Example graphs</h3>
+
+                    <select
+                        value={selectedExampleId}
+                        onChange={(e) => setSelectedExampleId(e.target.value)}
+                    >
+                        <option value="">Select example…</option>
+                        {exampleGraphs.map((g) => (
+                            <option key={g.id} value={g.id}>
+                                {g.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {selectedExampleId && (
+                        <div style={{ fontSize: "11px", color: "#fc08088e" }}>
+                            {
+                                exampleGraphs.find((g) => g.id === selectedExampleId)
+                                    ?.description
+                            }
+                        </div>
+                    )}
+
+                    <button
+                        onClick={loadExampleGraph}
+                        disabled={!selectedExampleId}
+                        style={{
+                            marginTop: "4px",
+                            color: `${theme === "dark" ? "#000000" : "#ffffff"}`,
+                            backgroundColor: `${theme === "dark" ? "#ffffff" : "#000000"}`
+                        }}
+                    >
+                        Load example
+                    </button>
+                </div>
+                {/* <button
                     onClick={() => {
                         const g = exampleGraph as ExampleGraph;
 
@@ -432,7 +541,7 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                     }}
                 >
                     Load Example Graph
-                </button>
+                </button> */}
 
             </div>
         </div>

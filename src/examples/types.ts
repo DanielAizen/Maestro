@@ -13,6 +13,9 @@ export interface ExampleEdge {
 }
 
 export interface ExampleGraph {
+    id: string;
+    name: string;
+    description: string;
     nodes: ExampleNode[];
     edges: ExampleEdge[];
 }
