@@ -15,7 +15,11 @@ import {
     addEdge as addGraphEdge,
 } from "../store/graphSlice";
 
-export function GraphCanvas() {
+interface GraphCanvasProps {
+    highlightedNodeId: string | null;
+}
+
+export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -37,19 +41,34 @@ export function GraphCanvas() {
         }
     };
 
+    const flowNodes = nodes.map((n) => {
+        if (n.id !== highlightedNodeId) return n;
+
+        return {
+            ...n,
+            style: {
+                ...(n.style || {}),
+                border: "2px solid #ffcc00",
+                boxShadow: "0 0 0 4px rgba(255, 204, 0, 0.4)",
+            },
+        };
+    });
+
     return (
-        <div style={{ flex: 1 }}>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                fitView
-            >
-                <Background />
-                <Controls />
-            </ReactFlow>
+        <div style={{ flex: 1, minHeight: 0 }}>
+            <div style={{ width: "100%", height: "100%" }}>
+                <ReactFlow
+                    nodes={flowNodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    fitView
+                >
+                    <Background />
+                    <Controls />
+                </ReactFlow>
+            </div>
         </div>
     );
 }
