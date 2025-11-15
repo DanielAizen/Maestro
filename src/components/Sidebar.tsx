@@ -46,6 +46,12 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
         }
     };
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setSearchError(null);
+        onHighlightNode(null);
+    };
+
     return (
         <div
             style={{
@@ -65,8 +71,9 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                     style={{
                         marginBottom: "8px",
                         display: "flex",
-                        gap: "4px",
-                        alignItems: "center",
+                        flexDirection: "column",
+                        gap: "8px",
+                        alignItems: "stretch",
                     }}
                 >
                     <input
@@ -76,7 +83,12 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ flex: 1, padding: "2px 6px" }}
                     />
-                    <button onClick={handleSearch}>Search</button>
+                    <div style={{ display: "flex", justifyContent: "space-around", paddingBottom: "10px" }}>
+                        <button onClick={handleSearch}>Search</button>
+                        <button onClick={handleClearSearch}>Clear</button>
+
+                    </div>
+
                 </div>
                 {searchError && (
                     <div
@@ -99,6 +111,7 @@ export function Sidebar({ onHighlightNode }: SidebarProps) {
                         padding: 0,
                         margin: 0,
                         color: "white",
+                        rowGap: "6px"
                     }}
                 >
                     {nodes.map((n: Node) => (
