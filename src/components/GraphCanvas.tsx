@@ -19,9 +19,10 @@ import { useCallback, useMemo, useState } from "react";
 
 interface GraphCanvasProps {
     highlightedNodeId: string | null;
+    pathHighlight: { nodeIds: string[]; edgeIds: string[] } | null;
 }
 
-export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
+export function GraphCanvas({ highlightedNodeId, pathHighlight }: GraphCanvasProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -64,6 +65,7 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
     const flowNodes = useMemo(
         () =>
             nodes.map((n) => {
+
                 const baseStyle = {
                     ...(n.style || {}),
                     backgroundColor: isDark ? "#ffffff" : "#2b2b2b",
@@ -75,11 +77,23 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
                     fontSize: "12px",
                     fontWeight: 500,
                 };
+                const inPath = pathHighlight?.nodeIds.includes(n.id) ?? false;
 
                 if (n.id !== highlightedNodeId) {
                     return {
                         ...n,
                         style: baseStyle,
+                    };
+                }
+
+                if (inPath) {
+                    return {
+                        ...n,
+                        style: {
+                            ...baseStyle,
+                            borderColor: "#00bcd4",
+                            boxShadow: "0 0 0 3px rgba(0, 188, 212, 0.35)",
+                        },
                     };
                 }
 
@@ -92,14 +106,15 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
                     },
                 };
             }),
-        [nodes, highlightedNodeId, isDark]
+        [nodes, highlightedNodeId, isDark, pathHighlight]
     );
 
     const flowEdges: Edge[] = useMemo(
         () =>
             edges.map((e) => {
-                const data = e.data as Record<string, unknown> | null | undefined;
+                const inPath = pathHighlight?.edgeIds.includes(e.id) ?? false;
 
+                const data = e.data as Record<string, unknown> | null | undefined;
                 let storedLabel = "";
                 if (data && typeof data.label === "string") {
                     storedLabel = data.label;
@@ -107,13 +122,27 @@ export function GraphCanvas({ highlightedNodeId }: GraphCanvasProps) {
                     storedLabel = e.label;
                 }
 
+                const baseStyle = {
+                    ...(e.style || {}),
+                    strokeWidth: inPath ? 3 : 1.5,
+                    stroke: inPath ? "#d40000" : undefined,
+                };
+
                 if (e.id !== hoveredEdgeId) {
-                    return { ...e, label: undefined };
+                    return {
+                        ...e,
+                        label: undefined,
+                        style: baseStyle,
+                    };
                 }
 
-                return { ...e, label: storedLabel };
+                return {
+                    ...e,
+                    label: storedLabel,
+                    style: baseStyle,
+                };
             }),
-        [edges, hoveredEdgeId]
+        [edges, hoveredEdgeId, pathHighlight]
     );
 
     const onEdgeMouseEnter = useCallback(

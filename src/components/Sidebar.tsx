@@ -4,12 +4,18 @@ import { deleteNode, deleteEdge, renameNode } from "../store/graphSlice";
 import type { Node } from "@xyflow/react";
 import { getNodeLabel } from "../utils/NodeUtils";
 import { memo, useState } from "react";
+import { bfsShortestPath, buildAdjacencyList, dijkstraShortestPath } from "../utils/graphAlgorithms";
+import exampleGraph from "../examples/exampleGraph.json";
+import type { ExampleGraph } from "../examples/types";
+import { setGraph } from "../store/graphSlice";
+
 
 interface SidebarProps {
     onHighlightNode: (nodeId: string | null) => void;
+    onHighlightPath: (path: { nodeIds: string[]; edgeIds: string[] } | null) => void;
 }
 
-function SidebarInner({ onHighlightNode }: SidebarProps) {
+function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
     const dispatch = useDispatch();
     const nodes = useSelector((state: RootState) => state.graph.nodes);
     const edges = useSelector((state: RootState) => state.graph.edges);
@@ -21,6 +27,18 @@ function SidebarInner({ onHighlightNode }: SidebarProps) {
 
     const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
     const [editingLabel, setEditingLabel] = useState("")
+
+    const [algo, setAlgo] = useState<"bfs" | "dijkstra">("bfs");
+    const [pathError, setPathError] = useState<string | null>(null);
+    const [startNode, setStartNode] = useState("");
+    const [endNode, setEndNode] = useState("");
+    const [lastMetrics, setLastMetrics] = useState<{
+        algorithm: "bfs" | "dijkstra";
+        durationMs: number;
+        nodes: number;
+        edges: number;
+    } | null>(null);
+
 
     const getNodeLabelById = (id: string): string => {
         const node = nodes.find((n) => n.id === id);
@@ -74,6 +92,49 @@ function SidebarInner({ onHighlightNode }: SidebarProps) {
 
         dispatch(renameNode({ nodeId: editingNodeId, label: trimmed }));
         cancelEditing();
+    };
+
+    const runPathfinding = () => {
+        setPathError(null);
+
+        if (!startNode || !endNode) {
+            setPathError("Please select start and end nodes");
+            onHighlightPath(null);
+            return;
+        }
+
+        const adj = buildAdjacencyList(nodes as Node[], edges);
+
+        const t0 = performance.now();
+        const result =
+            algo === "bfs"
+                ? bfsShortestPath(adj, startNode, endNode)
+                : dijkstraShortestPath(adj, startNode, endNode);
+        const t1 = performance.now();
+
+        setLastMetrics({
+            algorithm: algo,
+            durationMs: t1 - t0,
+            nodes: nodes.length,
+            edges: edges.length,
+        });
+
+        if (!result) {
+            setPathError("No path found");
+            onHighlightPath(null);
+            return;
+        }
+
+        onHighlightPath({
+            nodeIds: result.nodeIds,
+            edgeIds: result.edgeIds,
+        });
+    };
+
+    const clearPath = () => {
+        onHighlightPath(null);
+        setPathError(null);
+        setLastMetrics(null);
     };
 
     return (
@@ -234,6 +295,145 @@ function SidebarInner({ onHighlightNode }: SidebarProps) {
                         </li>
                     ))}
                 </ul>
+            </div>
+            <div style={{ marginTop: "16px", paddingTop: "8px", borderTop: `1px solid ${theme === "dark" ? "#ffffff" : "#000000"}` }}>
+                <h3 style={{ margin: "0 0 8px", color: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>Pathfinding</h3>
+
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                        fontSize: "13px",
+                    }}
+                >
+                    <div style={{ display: "flex", gap: "4px" }}>
+                        <select
+                            value={startNode}
+                            onChange={(e) => setStartNode(e.target.value)}
+                            style={{ flex: 1 }}
+                        >
+                            <option value="">Start node</option>
+                            {nodes.map((n: Node) => (
+                                <option key={n.id} value={n.id}>
+                                    {getNodeLabel(n)}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={endNode}
+                            onChange={(e) => setEndNode(e.target.value)}
+                            style={{ flex: 1 }}
+                        >
+                            <option value="">End node</option>
+                            {nodes.map((n: Node) => (
+                                <option key={n.id} value={n.id}>
+                                    {getNodeLabel(n)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <label style={{ display: "flex", gap: "4px", alignItems: "center", color: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>
+                            <input
+                                type="radio"
+                                value="bfs"
+                                checked={algo === "bfs"}
+                                onChange={() => setAlgo("bfs")}
+                            />
+                            BFS
+                        </label>
+                        <label style={{ display: "flex", gap: "4px", alignItems: "center", color: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>
+                            <input
+                                type="radio"
+                                value="dijkstra"
+                                checked={algo === "dijkstra"}
+                                onChange={() => setAlgo("dijkstra")}
+                            />
+                            Dijkstra
+                        </label>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                            onClick={runPathfinding}
+                            style={{ flex: 1, color: `${theme === "dark" ? "#000000" : "#ffffff"}`, backgroundColor: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>
+                            Run
+                        </button>
+                        <button
+                            onClick={clearPath}
+                            style={{ color: `${theme === "dark" ? "#000000" : "#ffffff"}`, backgroundColor: `${theme === "dark" ? "#ffffff" : "#000000"}` }}>
+                            Clear path
+                        </button>
+                    </div>
+
+                    {pathError && (
+                        <div style={{ color: "#ff0202", fontSize: "12px" }}>{pathError}</div>
+                    )}
+
+                    {lastMetrics && (
+                        <div style={{ fontSize: "11px", color: "#fc08088e" }}>
+                            {lastMetrics.algorithm.toUpperCase()} ·{" "}
+                            {lastMetrics.durationMs.toFixed(3)} ms · {lastMetrics.nodes} nodes ·{" "}
+                            {lastMetrics.edges} edges
+                        </div>
+                    )}
+                </div>
+                <button
+                    onClick={() => {
+                        const g = exampleGraph as ExampleGraph;
+
+                        // transform example nodes → React Flow nodes
+                        const nodes = g.nodes.map((n) => ({
+                            id: n.id,
+                            data: { label: n.label },
+                            position: { x: n.x, y: n.y },
+                            type: "default",
+                            style: {
+                                borderRadius: "60px",
+                                width: "60px",
+                                height: "60px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 400,
+
+                            }
+                        }));
+
+                        // transform example edges → React Flow edges
+                        const edges = g.edges.map((e) => ({
+                            id: e.id,
+                            source: e.source,
+                            target: e.target,
+                            label: `${e.source} → ${e.target}`,
+                            data: {
+                                label: `${e.source} → ${e.target}`,
+                                weight: e.weight
+                            }
+                        }));
+
+                        // clear any highlighted path
+                        onHighlightPath(null);
+
+                        // clear search highlight
+                        onHighlightNode(null);
+
+                        // reset graph
+                        dispatch(setGraph({ nodes, edges }));
+                    }}
+                    style={{
+                        width: "100%",
+                        marginTop: "16px",
+                        color: `${theme === "dark" ? "#000000" : "#ffffff"}`,
+                        backgroundColor: `${theme === "dark" ? "#ffffff" : "#000000"}`
+                    }}
+                >
+                    Load Example Graph
+                </button>
+
             </div>
         </div>
     );
