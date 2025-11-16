@@ -120,13 +120,25 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
             edges.map((e) => {
                 const inPath = pathHighlight?.edgeIds.includes(e.id) ?? false;
 
-                const data = e.data as Record<string, unknown> | null | undefined;
+                const data = e.data as { label?: string; weight?: number } | null | undefined;
+
+                const weight =
+                    typeof data?.weight === "number" && !Number.isNaN(data.weight)
+                        ? data.weight
+                        : 1;
+
                 let storedLabel = "";
                 if (data && typeof data.label === "string") {
                     storedLabel = data.label;
                 } else if (typeof e.label === "string") {
                     storedLabel = e.label;
                 }
+
+                // Final label when hovering
+                const hoverLabel =
+                    storedLabel && weight != null
+                        ? `${storedLabel} (w = ${weight})`
+                        : storedLabel || `w = ${weight}`;
 
                 const baseStyle = {
                     ...(e.style || {}),
@@ -144,12 +156,13 @@ export function GraphCanvas({ highlightedNodeIds, pathHighlight }: GraphCanvasPr
 
                 return {
                     ...e,
-                    label: storedLabel,
+                    label: hoverLabel,
                     style: baseStyle,
                 };
             }),
         [edges, hoveredEdgeId, pathHighlight]
     );
+
 
     const onEdgeMouseEnter = useCallback(
         (_evt: React.MouseEvent, edge: Edge) => {

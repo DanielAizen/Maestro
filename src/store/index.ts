@@ -1,40 +1,26 @@
 import { configureStore } from "@reduxjs/toolkit";
-import graphReducer, {
-    type GraphState,
-    type GraphSnapshot,
-} from "./graphSlice";
+import graphReducer, { type GraphState } from "./graphSlice";
 import themeReducer, { THEME_STORAGE_KEY } from "./themeSlice";
-
-const GRAPH_STORAGE_KEY = "graph-state-v1";
+import { graphPersistenceMiddleware } from "./graphPersistenceMiddleware";
+import { loadGraphFromStorage } from "../utils/graphPersistence";
 
 type RootPreloadedState = {
     graph: GraphState;
 };
 
 function loadGraphState(): RootPreloadedState | undefined {
-    if (typeof window === "undefined") return undefined;
+    const saved = loadGraphFromStorage();
+    if (!saved) return undefined;
 
-    try {
-        const raw = localStorage.getItem(GRAPH_STORAGE_KEY);
-        if (!raw) return undefined;
+    const graph: GraphState = {
+        nodes: saved.nodes as GraphState["nodes"],
+        edges: saved.edges as GraphState["edges"],
+        past: [],
+        future: [],
+        savedSnapshots: saved.savedSnapshots ?? [],
+    };
 
-        const parsed = JSON.parse(raw) as GraphSnapshot;
-
-        if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-            return undefined;
-        }
-
-        const graph: GraphState = {
-            nodes: parsed.nodes,
-            edges: parsed.edges,
-            past: [],
-            future: [],
-        };
-
-        return { graph };
-    } catch {
-        return undefined;
-    }
+    return { graph };
 }
 
 export const store = configureStore({
@@ -43,26 +29,22 @@ export const store = configureStore({
         theme: themeReducer,
     },
     preloadedState: loadGraphState(),
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(graphPersistenceMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-// Persist graph on every change
+// Persist theme on every change (graph handled by middleware)
 if (typeof window !== "undefined") {
     store.subscribe(() => {
         try {
             const state = store.getState();
-            const graph = state.graph as GraphState;
-            const snapshot: GraphSnapshot = {
-                nodes: graph.nodes,
-                edges: graph.edges,
-            };
-            localStorage.setItem(GRAPH_STORAGE_KEY, JSON.stringify(snapshot));
             const theme = state.theme.theme;
             localStorage.setItem(THEME_STORAGE_KEY, theme);
         } catch {
-            // safely continue if an error occurs
+            // ignore
         }
     });
 }
