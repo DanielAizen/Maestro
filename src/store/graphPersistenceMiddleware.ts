@@ -1,5 +1,5 @@
 import type { Middleware } from "@reduxjs/toolkit";
-import type { GraphState, GraphSnapshot } from "./graphSlice";
+import type { GraphState } from "./graphSlice";
 import { saveGraphToStorage } from "../utils/graphPersistence";
 
 export const graphPersistenceMiddleware: Middleware =
@@ -7,12 +7,14 @@ export const graphPersistenceMiddleware: Middleware =
         const result = next(action);
 
         const state = store.getState() as { graph: GraphState };
-        const { nodes, edges } = state.graph;
+        const { nodes, edges, savedSnapshots } = state.graph;
 
-        const snapshot: GraphSnapshot = { nodes, edges };
-
-        // Persist current graph after every action
-        saveGraphToStorage(snapshot);
+        // Persist current graph plus snapshots after every action
+        saveGraphToStorage({
+            nodes,
+            edges,
+            savedSnapshots,
+        });
 
         return result;
     };

@@ -45,7 +45,7 @@ export const SavedGraphsSidebar = memo(function SavedGraphsSidebar() {
             style={{
                 width: isOpen ? 260 : 40,
                 transition: "width 0.2s ease",
-                borderLeft: "1px solid rgb(255, 255, 255)",
+                borderLeft: `1px solid ${theme === "dark" ? "#fff" : "#000"}`,
                 display: "flex",
                 flexDirection: "column",
             }}
@@ -62,7 +62,7 @@ export const SavedGraphsSidebar = memo(function SavedGraphsSidebar() {
                     textAlign: "left",
                 }}
             >
-                {isOpen ? "Snapshots ▸" : "▹"}
+                {isOpen ? "Snapshots >" : "<"}
             </button>
 
             {isOpen && (
