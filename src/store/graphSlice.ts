@@ -13,9 +13,16 @@ export interface GraphSnapshot {
     edges: Edge[];
 }
 
+export interface NamedGraphSnapshot extends GraphSnapshot {
+    id: string;
+    name: string;
+    createdAt: number;
+}
+
 export interface GraphState extends GraphSnapshot {
     past: GraphSnapshot[];
     future: GraphSnapshot[];
+    savedSnapshots: NamedGraphSnapshot[];
 }
 
 const initialState: GraphState = {
@@ -23,6 +30,7 @@ const initialState: GraphState = {
     edges: [],
     past: [],
     future: [],
+    savedSnapshots: [],
 };
 
 const cloneSnapshot = (snap: GraphSnapshot): GraphSnapshot => ({
@@ -70,6 +78,7 @@ export const graphSlice = createSlice({
                 (edge) => edge.source !== nodeId && edge.target !== nodeId
             );
         },
+
         renameNode(
             state,
             action: PayloadAction<{ nodeId: string; label: string }>
@@ -93,7 +102,7 @@ export const graphSlice = createSlice({
         ) {
             const { sourceId, targetId, weight = 1 } = action.payload;
 
-            // don't add duplicate edges
+            // avoid duplicate edges
             const alreadyExists = state.edges.some(
                 (e) => e.source === sourceId && e.target === targetId
             );
@@ -177,6 +186,43 @@ export const graphSlice = createSlice({
             state.nodes = next.nodes.map((n) => ({ ...n }));
             state.edges = next.edges.map((e) => ({ ...e }));
         },
+
+        saveSnapshot(state, action: PayloadAction<{ name?: string }>) {
+            const { name } = action.payload;
+            const snapshotName =
+                name && name.trim().length > 0
+                    ? name.trim()
+                    : `Snapshot ${state.savedSnapshots.length + 1}`;
+
+            const snapshot: NamedGraphSnapshot = {
+                id: crypto.randomUUID(),
+                name: snapshotName,
+                createdAt: Date.now(),
+                nodes: state.nodes.map((n) => ({ ...n })),
+                edges: state.edges.map((e) => ({ ...e })),
+            };
+
+            state.savedSnapshots.push(snapshot);
+        },
+
+        loadSnapshot(state, action: PayloadAction<{ id: string }>) {
+            const { id } = action.payload;
+            const snapshot = state.savedSnapshots.find((s) => s.id === id);
+            if (!snapshot) return;
+
+            // loading a snapshot should be undoable
+            pushHistory(state);
+
+            state.nodes = snapshot.nodes.map((n) => ({ ...n }));
+            state.edges = snapshot.edges.map((e) => ({ ...e }));
+        },
+
+        deleteSnapshot(state, action: PayloadAction<{ id: string }>) {
+            const { id } = action.payload;
+            state.savedSnapshots = state.savedSnapshots.filter(
+                (s) => s.id !== id
+            );
+        },
     },
 });
 
@@ -191,6 +237,9 @@ export const {
     applyEdgesChange,
     undo,
     redo,
+    saveSnapshot,
+    loadSnapshot,
+    deleteSnapshot,
 } = graphSlice.actions;
 
 export default graphSlice.reducer;

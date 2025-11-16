@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
 import { deleteNode, deleteEdge, renameNode } from "../store/graphSlice";
 import type { Edge, Node } from "@xyflow/react";
-import { getNodeLabel } from "../utils/NodeUtils";
+import { getEdgeWeight, getNodeLabel } from "../utils/NodeUtils";
 import { memo, useMemo, useState } from "react";
 import { bfsShortestPath, buildAdjacencyList, dijkstraShortestPath } from "../utils/graphAlgorithms";
 // import exampleGraph from "../examples/exampleGraph.json";
@@ -335,27 +335,34 @@ function SidebarInner({ onHighlightNode, onHighlightPath }: SidebarProps) {
                             color: `${theme === 'dark' ? "white" : "black"}`,
                         }}
                     >
-                        {edges.map((e) => (
-                            <li
-                                key={e.id}
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    marginBottom: "4px",
-                                }}
-                            >
-                                <span>
-                                    {getNodeLabelById(e.source)} → {getNodeLabelById(e.target)}
-                                </span>
-                                <button
-                                    style={{ marginLeft: "8px", backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
-                                    onClick={() => dispatch(deleteEdge({ edgeId: e.id }))}
+                        {edges.map((e) => {
+                            const weight = getEdgeWeight(e);
+                            return (
+                                <li
+                                    key={e.id}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: "4px",
+                                    }}
                                 >
-                                    Delete
-                                </button>
-                            </li>
-                        ))}
+                                    <span>
+                                        {getNodeLabelById(e.source)} → {getNodeLabelById(e.target)}
+                                    </span>
+                                    {" "}
+                                    <span style={{ opacity: 0.8, fontSize: "12px" }}>
+                                        (w = {weight})
+                                    </span>
+                                    <button
+                                        style={{ marginLeft: "8px", backgroundColor: `${theme === 'dark' ? "white" : "black"}`, color: `${theme === 'dark' ? "black" : "white"}` }}
+                                        onClick={() => dispatch(deleteEdge({ edgeId: e.id }))}
+                                    >
+                                        Delete
+                                    </button>
+                                </li>
+                            )
+                        })}
                     </ul>
                 </div>
 

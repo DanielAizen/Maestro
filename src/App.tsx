@@ -1,9 +1,11 @@
+import { useState } from "react";
+import { useSelector } from "react-redux";
+
 import { TopBarControls } from "./components/TopBarControls";
 import { Sidebar } from "./components/Sidebar";
 import { GraphCanvas } from "./components/GraphCanvas";
-import { useState } from "react";
-import { useSelector } from "react-redux";
 import type { RootState } from "./store";
+import { SavedGraphsSidebar } from "./components/SavedGraphsSidebar";
 
 type PathHighlight = {
   nodeIds: string[];
@@ -34,10 +36,12 @@ export default function App() {
           onHighlightNode={(ids) => setHighlightedNodeIds(ids)}
           onHighlightPath={(path) => setHighlightedPath(path)}
         />
+
         <GraphCanvas
           highlightedNodeIds={highlightedNodeIds}
           pathHighlight={highlightedPath}
         />
+        <SavedGraphsSidebar />
       </div>
     </div>
   );
